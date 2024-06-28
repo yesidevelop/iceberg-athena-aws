@@ -27,128 +27,71 @@ The repo is to supplement the [youtube video](https://youtu.be/iGvj1gjbwl0) on I
 2. Create the CSV table using athena
     ```
     CREATE EXTERNAL TABLE
-      iceberg_tutorial_db.nyc_taxi_csv
+      iceberg_tutorial_db.customer_csv
       (
-            vendorid bigint,
-            tpep_pickup_datetime timestamp,
-            tpep_dropoff_datetime timestamp,
-            passenger_count double,
-            trip_distance double,
-            ratecodeid double,
-            store_and_fwd_flag string,
-            pulocationid bigint,
-            dolocationid bigint,
-            payment_type bigint,
-            fare_amount double,
-            extra double,
-            mta_tax double,
-            tip_amount double,
-            tolls_amount double,
-            improvement_surcharge double,
-            total_amount double,
-            congestion_surcharge double,
-            airport_fee double
+            index_field bigint,
+            customer_id string,
+            first_name string,
+            last_name string,
+            company string,
+            city string,
+            country string,
+            phone_1 string,
+            phone_2 string,
+            email string,
+            subscription_date timestamp,
+            website string
       )
       ROW FORMAT DELIMITED
       FIELDS TERMINATED BY ','
       STORED AS TEXTFILE
-      LOCATION 's3://<s3-bucket-name>/csv/';
+      LOCATION 's3://customer-data-iceberg/csv/';
     ```
 3. Create an Apache Iceberg table
     ```
     CREATE TABLE
-      iceberg_tutorial_db.nyc_taxi_iceberg 
+      iceberg_tutorial_db.customer_iceberg 
       (
-            vendorid bigint,
-            tpep_pickup_datetime timestamp,
-            tpep_dropoff_datetime timestamp,
-            passenger_count double,
-            trip_distance double,
-            ratecodeid double,
-            store_and_fwd_flag string,
-            pulocationid bigint,
-            dolocationid bigint,
-            payment_type bigint,
-            fare_amount double,
-            extra double,
-            mta_tax double,
-            tip_amount double,
-            tolls_amount double,
-            improvement_surcharge double,
-            total_amount double,
-            congestion_surcharge double,
-            airport_fee double
+            index_field bigint,
+            customer_id string,
+            first_name string,
+            last_name string,
+            company string,
+            city string,
+            country string,
+            phone_1 string,
+            phone_2 string,
+            email string,
+            subscription_date timestamp,
+            website string
       )
-      PARTITIONED BY (day(tpep_pickup_datetime))
-      LOCATION 's3://<s3-bucket-name>/nyc_taxi_iceberg/'
+      PARTITIONED BY (day(subscription_date))
+      LOCATION 's3://customer-data-iceberg/customer_iceberg/'
       TBLPROPERTIES ( 'table_type' ='ICEBERG'  );
     ```
-4. Create a 2nd Apache Cceberg table for updating data
-    ```
-    CREATE TABLE
-      iceberg_tutorial_db.nyc_taxi_iceberg_data_manipulation 
-      (
-            vendorid bigint,
-            tpep_pickup_datetime timestamp,
-            tpep_dropoff_datetime timestamp,
-            passenger_count double,
-            trip_distance double,
-            ratecodeid double,
-            store_and_fwd_flag string,
-            pulocationid bigint,
-            dolocationid bigint,
-            payment_type bigint,
-            fare_amount double,
-            extra double,
-            mta_tax double,
-            tip_amount double,
-            tolls_amount double,
-            improvement_surcharge double,
-            total_amount double,
-            congestion_surcharge double,
-            airport_fee double
-      )
-      PARTITIONED BY (day(tpep_pickup_datetime))
-      LOCATION 's3://<s3-bucket-name>/nyc_taxi_iceberg_data_manipulation/'
-      TBLPROPERTIES ( 'table_type' ='ICEBERG'  );
-    ```
-5. Insert from CSV table to Iceberg format
-    ```
-    INSERT INTO iceberg_tutorial_db.nyc_taxi_iceberg
-    SELECT 
-    *
-    FROM "iceberg_tutorial_db"."nyc_taxi_csv" ;
-    ```
+
 6. Run a query to look at the Day partition to see how Iceberg works
     ```
-    SELECT * FROM nyc_taxi_iceberg WHERE day(tpep_pickup_datetime) =  5 limit 20;
-    ```
-7. Insert into another Iceberg table for data manipulation
-    ```
-    INSERT INTO nyc_taxi_iceberg_data_manipulation
-    SELECT * FROM nyc_taxi_iceberg;
+    SELECT * FROM customer_iceberg WHERE day(subscription_date) =  24 limit 20;
     ```
 8. Update some data to see the change take place 
     ```
-    UPDATE nyc_taxi_iceberg_data_manipulation SET passenger_count = 4.0 WHERE vendorid = 2 AND year(tpep_pickup_datetime) =2022;
+    UPDATE customer_iceberg SET company = 'Company2022' WHERE year(subscription_date) =2022;
     ```
 9. Select the updated data
     ```
-    SELECT * FROM nyc_taxi_iceberg_data_manipulation WHERE vendorid = 2 and year(tpep_pickup_datetime) =2022 limit 10;
+    SELECT * FROM customer_iceberg WHERE year(subscription_date) =2022 limit 10;
     ```
 10. Time travel query
-    ```
-    SELECT * FROM nyc_taxi_iceberg_data_manipulation FOR SYSTEM_TIME AS OF TIMESTAMP '2022-11-01 22:00:00' WHERE vendorid = 2 and year(tpep_pickup_datetime)= 2022 limit 10; 
-    ```
-    
+   
     New Query with Athena version 3
     ```
-    SELECT * FROM nyc_taxi_iceberg_data_manipulation FOR TIMESTAMP AS OF (current_timestamp - interval '10' minute)
-    WHERE vendorid = 2 and year(tpep_pickup_datetime)= 2022 limit 10;
+    SELECT * FROM customer_iceberg FOR TIMESTAMP AS OF (current_timestamp - interval '1' minute)
+    WHERE year(subscription_date) =2022 limit 10;
     ```
 11. Delete from iceberg table
     ```
-    DELETE FROM nyc_taxi_iceberg_data_manipulation WHERE year(tpep_pickup_datetime) != 2008; 
+    DELETE FROM customer_iceberg WHERE year(subscription_date) != 2008; 
     ```
 
 ## Creators

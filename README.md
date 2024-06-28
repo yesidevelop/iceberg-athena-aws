@@ -140,6 +140,12 @@ The repo is to supplement the [youtube video](https://youtu.be/iGvj1gjbwl0) on I
     ```
     SELECT * FROM nyc_taxi_iceberg_data_manipulation FOR SYSTEM_TIME AS OF TIMESTAMP '2022-11-01 22:00:00' WHERE vendorid = 2 and year(tpep_pickup_datetime)= 2022 limit 10; 
     ```
+    
+    New Query with Athena version 3
+    ```
+    SELECT * FROM nyc_taxi_iceberg_data_manipulation FOR TIMESTAMP AS OF (current_timestamp - interval '10' minute)
+    WHERE vendorid = 2 and year(tpep_pickup_datetime)= 2022 limit 10;
+    ```
 11. Delete from iceberg table
     ```
     DELETE FROM nyc_taxi_iceberg_data_manipulation WHERE year(tpep_pickup_datetime) != 2008; 
